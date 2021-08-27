@@ -9,12 +9,13 @@ from functools import partial
 from .infer import demucs_sep, tf_sep
 
 package_dir = os.path.dirname(__file__)
-jitted_dir = os.path.join(package_dir, 'jitted_model')
+jitted_dir = os.path.expanduser('~/danna-sep-checkpoints')
 
-model_file_id = {
-    'xumx': '',
-    'unet': '',
-    'demucs': ''
+
+model_file_url = {
+    'xumx': 'https://drive.google.com/uc?id=1DCTJQ1ei4klR9L69fjbBGILMdJAoNN78',
+    'unet': 'https://drive.google.com/uc?id=1qzBbT8UIKKWNMs-kiB3MNHGccdwdBJVf',
+    'demucs': 'https://drive.google.com/uc?id=1slSKOd7P-YmJ0HnjzaTOKQaOn3pQN0Ge'
 }
 
 model_file_path = {
@@ -69,11 +70,13 @@ def entry():
             tf_sep
         ]
 
+    os.makedirs(jitted_dir, exist_ok=True)
+
     result = 0
     for model_name, weights, func in zip(models, blending_weights, sep_func):
         file_path = model_file_path[model_name]
         ensure_model_exist(
-            model_file_id[model_name], file_path)
+            model_file_url[model_name], file_path)
         jitted = torch.jit.load(file_path)
         pred = func(y, jitted)
         result += pred[..., :orig_length] * weights[:, None, None]
@@ -88,7 +91,7 @@ def entry():
     return
 
 
-def ensure_model_exist(gd_id, file_path):
+def ensure_model_exist(url, file_path):
     if not os.path.isfile(file_path):
         print("downloading pre-trained model ...")
-        gdown.download(gd_id, output=file_path)
+        gdown.download(url, output=file_path)

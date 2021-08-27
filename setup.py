@@ -7,7 +7,7 @@ EMAIL = 'lolimaster.cs03@nctu.edu.tw'
 
 packages = setuptools.find_packages()
 
-package_data = {'danna-sep': ['jitted_model/*.pth']}
+package_data = {'': ['*.pth']}
 
 install_requires = ['torch', 'torchaudio', 'gdown']
 

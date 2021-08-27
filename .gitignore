@@ -3,3 +3,6 @@ main.py
 *.pyc
 *.pth
 *.pt
+build/
+*egg-info/
+dist/
