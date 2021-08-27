@@ -1,0 +1,94 @@
+import torch
+import torch.nn.functional as F
+import torchaudio
+import gdown
+import os
+import argparse
+from functools import partial
+
+from .infer import demucs_sep, tf_sep
+
+package_dir = os.path.dirname(__file__)
+jitted_dir = os.path.join(package_dir, 'jitted_model')
+
+model_file_id = {
+    'xumx': '',
+    'unet': '',
+    'demucs': ''
+}
+
+model_file_path = {
+    'xumx': os.path.join(jitted_dir, 'xumx_mwf.pth',),
+    'unet': os.path.join(jitted_dir, 'unet_attention.pth'),
+    'demucs': os.path.join(jitted_dir, 'demucs_4_decoders.pth')
+}
+
+
+blending_weights_3 = torch.tensor([[0.2, 0.17, 0.5, 0.4],
+                                   [0.6, 0.73, 0.5, 0.4],
+                                   [0.2, 0.1, 0., 0.2]])
+
+blending_weights_2 = torch.tensor([[0.4, 0.27, 0.5, 0.6],
+                                   [0.6, 0.73, 0.5, 0.4]])
+
+SAMPLERATE = 44100
+
+parser = argparse.ArgumentParser('A music source separation tool')
+parser.add_argument('infile', type=str, help='input audio file')
+parser.add_argument('--outdir', type=str, default='./',
+                    help='output directory')
+parser.add_argument('--fast', action='store_true',
+                    help='faster inference using two of the models')
+
+
+def entry():
+    args = parser.parse_args()
+    infile = args.infile
+    file_name, ext = os.path.splitext(os.path.basename(infile))
+
+    y, sr = torchaudio.load(infile, channels_first=True)
+    if sr != SAMPLERATE:
+        y = torchaudio.functional.resample(y, sr, SAMPLERATE)
+
+    orig_length = y.size(1)
+    y = F.pad(y, [0, 1024])
+
+    if args.fast:
+        models = ['unet', 'demucs']
+        blending_weights = blending_weights_2
+        sep_func = [
+            partial(tf_sep, batching=True),
+            partial(demucs_sep, rate=SAMPLERATE, shifts=1)
+        ]
+    else:
+        models = ['unet', 'demucs', 'xumx']
+        blending_weights = blending_weights_3
+        sep_func = [
+            partial(tf_sep, batching=True),
+            partial(demucs_sep, rate=SAMPLERATE, shifts=1),
+            tf_sep
+        ]
+
+    result = 0
+    for model_name, weights, func in zip(models, blending_weights, sep_func):
+        file_path = model_file_path[model_name]
+        ensure_model_exist(
+            model_file_id[model_name], file_path)
+        jitted = torch.jit.load(file_path)
+        pred = func(y, jitted)
+        result += pred[..., :orig_length] * weights[:, None, None]
+
+    if sr != SAMPLERATE:
+        result = torchaudio.functional.resample(result, SAMPLERATE, sr)
+
+    for i, target in enumerate(['drums', 'bass', 'other', 'vocals']):
+        path = os.path.join(args.outdir, f'{file_name}_{target}.wav')
+        torchaudio.save(path, result[i], SAMPLERATE)
+
+    return
+
+
+def ensure_model_exist(gd_id, file_path):
+    if not os.path.isfile(file_path):
+        print("downloading pre-trained model ...")
+        gdown.download(gd_id, output=file_path)
