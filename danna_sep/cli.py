@@ -9,8 +9,9 @@ from functools import partial
 from .infer import demucs_sep, tf_sep
 
 package_dir = os.path.dirname(__file__)
-jitted_dir = os.path.expanduser('~/danna-sep-checkpoints')
-
+checkpoint_env = "DANNA_CHECKPOINTS"
+default_checkpoints = os.path.expanduser('~/danna-sep-checkpoints')
+jitted_dir = os.environ.get(checkpoint_env, default_checkpoints)
 
 model_file_url = {
     'xumx': 'https://drive.google.com/uc?id=1DCTJQ1ei4klR9L69fjbBGILMdJAoNN78',
@@ -37,9 +38,9 @@ SAMPLERATE = 44100
 parser = argparse.ArgumentParser('A music source separation tool')
 parser.add_argument('infile', type=str, help='input audio file')
 parser.add_argument('--outdir', type=str, default='./',
-                    help='output directory')
+                    help='output directory. Default to current working directory')
 parser.add_argument('--fast', action='store_true',
-                    help='faster inference using two of the models')
+                    help='faster inference using only two of the models')
 
 
 def entry():
