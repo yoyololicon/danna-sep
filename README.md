@@ -11,7 +11,7 @@ python setup.py install
 ## Usage
 
 ```
-usage: A music source separation tool [-h] [--outdir OUTDIR] [--fast] infile
+usage: danna_sep [-h] [--outdir OUTDIR] [--fast] infile
 
 positional arguments:
   infile           input audio file
