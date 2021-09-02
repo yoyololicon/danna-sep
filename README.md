@@ -28,6 +28,9 @@ When execute the first time it will download our pre-trained models (around 1 to
 
 This process is very time comsuming and require at least 16 Gb of RAM.
 
+## Training
+
+Please refer to our [training repo](https://github.com/yoyololicon/music-demixing-challenge-ismir-2021-entry).
 
 ## TODO
 
