@@ -82,12 +82,9 @@ def entry():
         pred = func(y, jitted)
         result += pred[..., :orig_length] * weights[:, None, None]
 
-    if sr != SAMPLERATE:
-        result = torchaudio.functional.resample(result, SAMPLERATE, sr)
-
     for i, target in enumerate(['drums', 'bass', 'other', 'vocals']):
         path = os.path.join(args.outdir, f'{file_name}_{target}.wav')
-        torchaudio.save(path, result[i], sr)
+        torchaudio.save(path, result[i], SAMPLERATE)
 
     return
 
