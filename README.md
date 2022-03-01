@@ -1,4 +1,5 @@
 # Danna-Sep: Danna Sama no Source Separation
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/yoyololicon/Danna-Sep)
 
 The winning model I used in [MDX 2021 Challenge](https://www.aicrowd.com/challenges/music-demixing-challenge-ismir-2021/winners).
 
@@ -31,6 +32,10 @@ This process is very time comsuming and require at least 16 Gb of RAM.
 ## Training
 
 Please refer to our [training repo](https://github.com/yoyololicon/music-demixing-challenge-ismir-2021-entry).
+
+## Web Demo
+
+Try Danna-Sep on [Huggingface Spaces](https://huggingface.co/spaces/yoyololicon/Danna-Sep).
 
 ## TODO
 
