@@ -9,7 +9,7 @@ packages = setuptools.find_packages()
 
 package_data = {'': ['*.pth']}
 
-install_requires = ['torch', 'torchaudio', 'gdown']
+install_requires = ['torch', 'torchaudio', 'gdown', 'norbert']
 
 entry_points = {'console_scripts': ['danna_sep = danna_sep:entry']}
 
