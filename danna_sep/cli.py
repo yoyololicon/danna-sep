@@ -5,6 +5,7 @@ import gdown
 import os
 import argparse
 from functools import partial
+import onnxruntime as ort
 
 from .infer import demucs_sep, tf_sep
 
@@ -14,13 +15,15 @@ default_checkpoints = os.path.expanduser('~/danna-sep-checkpoints')
 jitted_dir = os.environ.get(checkpoint_env, default_checkpoints)
 
 model_file_url = {
-    'xumx': 'https://drive.google.com/uc?id=1DCTJQ1ei4klR9L69fjbBGILMdJAoNN78',
+    'xumx_old': 'https://drive.google.com/uc?id=1DCTJQ1ei4klR9L69fjbBGILMdJAoNN78',
+    'xumx': 'https://drive.google.com/uc?id=1rpkvcaoKmHbSP5fk0zwhmDmqiSGVXXT8',
     'unet': 'https://drive.google.com/uc?id=1qzBbT8UIKKWNMs-kiB3MNHGccdwdBJVf',
     'demucs': 'https://drive.google.com/uc?id=1slSKOd7P-YmJ0HnjzaTOKQaOn3pQN0Ge'
 }
 
 model_file_path = {
-    'xumx': os.path.join(jitted_dir, 'xumx_mwf.pth',),
+    'xumx_old': os.path.join(jitted_dir, 'xumx_mwf.pth',),
+    'xumx': os.path.join(jitted_dir, 'xumx.onnx'),
     'unet': os.path.join(jitted_dir, 'unet_attention.pth'),
     'demucs': os.path.join(jitted_dir, 'demucs_4_decoders.pth')
 }
@@ -78,8 +81,21 @@ def entry():
         file_path = model_file_path[model_name]
         ensure_model_exist(
             model_file_url[model_name], file_path)
-        jitted = torch.jit.load(file_path)
-        pred = func(y, jitted)
+
+        if file_path.endswith('.onnx'):
+            ort_session = ort.InferenceSession(file_path)
+
+            def sep(y):
+                y = torch.from_numpy(
+                    ort_session.run(
+                        None,
+                        {ort_session.get_inputs()[0].name: y.numpy()}
+                    )[0])
+                return y
+            pred = func(y, sep)
+        else:
+            jitted = torch.jit.load(file_path)
+            pred = func(y, jitted)
         result += pred[..., :orig_length] * weights[:, None, None]
 
     for i, target in enumerate(['drums', 'bass', 'other', 'vocals']):
